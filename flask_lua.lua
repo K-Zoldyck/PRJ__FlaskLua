@@ -5,41 +5,6 @@ local socket = require 'socket'
 local lcjson = require 'cjson'
 local http_parse = require 'libs/http_parse'()
 
--- local request_schm = function() return {
--- 	head = {},
--- 	args = {},
--- 	json = {},
--- 	buff = "",
-
--- 	builder = function(self, payload)
--- 		if #payload > 0 and payload ~= nil then 
-			 
--- 		end
--- 	end
--- } end
-
--- local __Resp = function() return {
--- 	head = {},
--- 	data = "",
--- 	code = 200,
-		
--- 	__raw = function(self)
--- 		local _package = "HTTP/1.1 "..self.code.." OK\n"
--- 		self.head['Server'] = 'LunarFlask/1.1 (unix)'
--- 		self.head['Access-Control-Allow-Origin'] = '*'
--- 		self.head['Content-Type'] = 'text/plain; charset=utf-8'
--- 		self.head['Content-Length'] = #self.data
-		
--- 		for key,value in pairs(self.head) do 
--- 			_package = _package..key..":"..value.."\n" 
--- 		end
-
--- 		_package = _package..'\n'..self.data
--- 		return _package
--- 	end
--- } end
-
-
 
 local flask_lua = function() 
 	return {
@@ -77,7 +42,7 @@ local flask_lua = function()
 				else
 					if string.lower(method) == 'get' then 
 						if self.g_callbacks[path] then 
-							local req, res = http_parse.get_parse(client_socket)
+							local req, res = http_parse.get_parse(client_socket,path)
 							cbk_return = self.g_callbacks[path](req,res)
 							
 							if cbk_return == nil then
