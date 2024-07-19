@@ -3,154 +3,98 @@
 
 local socket = require 'socket'
 local lcjson = require 'cjson'
+local http_parse = require 'libs/http_parse'()
 
+-- local request_schm = function() return {
+-- 	head = {},
+-- 	args = {},
+-- 	json = {},
+-- 	buff = "",
 
-local __Reqt = function() return {
-	head = {},
-	args = {},
-	json = {},
-	data = "",
+-- 	builder = function(self, payload)
+-- 		if #payload > 0 and payload ~= nil then 
+			 
+-- 		end
+-- 	end
+-- } end
 
-	__set_data = function(self,head, data, args)
-		if #head > 0 then self.head = head else self.head = nil end
-		if #data > 0 then self.data = data else self.data = nil end  
-		if #args > 0 then self.args = args else self.args = nil end  
+-- local __Resp = function() return {
+-- 	head = {},
+-- 	data = "",
+-- 	code = 200,
 		
-		if type(data) == 'table' and type(self.head) == 'table' then
-			if self.head['content-type'] == 'application/json' then
-				self.json = lcjson.decode(data) else self.json = nil 
-			end
-		end  
-	end
-} end
-
-local __Resp = function() return {
-	head = {},
-	data = "",
-	code = 200,
+-- 	__raw = function(self)
+-- 		local _package = "HTTP/1.1 "..self.code.." OK\n"
+-- 		self.head['Server'] = 'LunarFlask/1.1 (unix)'
+-- 		self.head['Access-Control-Allow-Origin'] = '*'
+-- 		self.head['Content-Type'] = 'text/plain; charset=utf-8'
+-- 		self.head['Content-Length'] = #self.data
 		
-	__raw = function(self)
-		local _package = "HTTP/1.1 "..self.code.." OK\n"
-		self.head['Server'] = 'LunarFlask/1.1 (unix)'
-		self.head['Access-Control-Allow-Origin'] = '*'
-		self.head['Content-Type'] = 'text/plain; charset=utf-8'
-		self.head['Content-Length'] = #self.data
-		
-		for key,value in pairs(self.head) do 
-			_package = _package..key..":"..value.."\n" 
-		end
+-- 		for key,value in pairs(self.head) do 
+-- 			_package = _package..key..":"..value.."\n" 
+-- 		end
 
-		_package = _package..'\n'..self.data
-		return _package
-	end
-} end
+-- 		_package = _package..'\n'..self.data
+-- 		return _package
+-- 	end
+-- } end
 
 
-local __request_line_parse__ = function(__buffer__)
-	if __buffer__ ~= nil then
-		local mth,url,vrs = string.match(__buffer__,'(%a+)%s(%S+)%s(%S+)')
-		local ask_char = string.find(url,'?')
 
-		local resp = {
-			method = mth,
-			versin = vrs,
-			router = nil,
-			params = {},
-		}
-		
-		if ask_char == nil then 
-			resp.router = url
-		else 
-			resp.router = string.sub(url,0,string.find(url,'?')-1)
-			local tmp = string.sub(url,string.find(url,'?')+1,_)
-			
-			for k, v in string.gmatch(tmp,'(%w+)=(%w+)') do
-				resp.params[k] = v
-			end
-		end
-		return resp
-	end
-	return nil
-end 
+local flask_lua = function() 
+	return {
+		addr = "127.0.0.1",
+		port = 3000,
+		g_callbacks = {}, -- get callbacks 
+		p_callbacks = {}, -- post callbacks
+		link_server = nil,
+	
+		init = function (self,addr, port)
+			self.addr = addr
+			self.port = port
+			self.run(self)
+		end,
 
+		get  = function(self,endpoint, callback ) self.g_callbacks[endpoint] = callback end,
+		post = function(self,endpoint, callback ) self.p_callbacks[endpoint] = callback end,
 
-local flask_lua = function() return {
-	addr = "127.0.0.1",
-	port = 3000,
-	getc = {},
-	posc = {},
+		run = function(self)
+			self.link_server = assert(socket.tcp(),'error on create socket')
+			self.link_server:bind(self.addr,self.port)
+			self.link_server:setoption("reuseaddr", true)
+			self.link_server:listen(5)
+			print('server start: http://'..self.addr..':'..self.port)
 
-	run = function (self,addr, port)
-		self.addr = addr
-		self.port = port
-		self._run(self)
-	end,
-
-	get  = function(self,endpoint, callback ) self.getc[endpoint] = callback end,
-	post = function(self,endpoint, callback ) self.posc[endpoint] = callback end,
-
-	_run = function(self)
-		local connection = socket.tcp()
-		connection:bind(self.addr,self.port)
-		connection:listen()
-
-		while true do
-			local buffer = connection:accept()
-			local request_line = __request_line_parse__(buffer:receive("*l"))
-			
-			if string.lower(request_line.method ) == 'post' then
-				if self.posc[request_line.router] ~= nil then
-					local head = {}
-					local requ = __Reqt()
-					local resp = __Resp()
+			while true do
+				local client_socket = self.link_server:accept()
+				local client_buffer = client_socket:receive('*l')
+				local client_resp   = io.open('data/404.ram','r'):read('*a')
+				local method,path,_ = http_parse.request_line(client_buffer)
 				
-					while true do
-						local read_line = buffer:receive("*l")
-						if #read_line == 0 then break end
+				if method == nil then 
+					client_socket:send('protocol not recognized')
+					client_socket:close()
+				else
+					if string.lower(method) == 'get' then 
+						if self.g_callbacks[path] then 
+							local req, res = http_parse.get_parse(client_socket)
+							cbk_return = self.g_callbacks[path](req,res)
 							
-						local k,v = string.match(read_line,'(%S+)%s*:%s*(%S+)')
-						if k ~= nil and v ~= nil then
-							head[string.lower(k)] = v
+							if cbk_return == nil then
+								print('[ warning ] callback for '..path..' not as returned data to send')
+							else client_resp = cbk_return:build() end
 						end
-					end
-
-					local content_size = head['content-length']
-						
-					if content_size ~= nil and #content_size > 0 then
-						local data = buffer:receive(content_size)
-						requ:__set_data(head,data,request_line.params)
-						print(request_line.router)
-						buffer:send(self.posc[request_line.router](requ,resp):__raw())
-					end
+					end 
+					
+					if string.lower(method) == 'post'  then print('post method') end
+					if string.lower(method) == 'put'   then print('put method') end
+					if string.lower(method) == 'delet' then print('delet method') end
+					
+					client_socket:send(client_resp)
+					client_socket:close()
 				end
-				-- return 404 or 303 here
 			end
-
-			if string.lower(request_line.method ) == 'get' then
-				if self.getc[request_line.router] ~= nil then 
-					local head = {}
-					local requ = __Reqt()
-					local resp = __Resp()
-				
-					while true do
-						local read_line = buffer:receive("*l")
-						if #read_line == 0 then break end
-							
-						local k,v = string.match(read_line,'(%S+)%s*:%s*(%S+)')
-						if k ~= nil and v ~= nil then
-							head[string.lower(k)] = v
-						end
-					end
-					requ:__set_data(head,"",request_line.params)
-					print(request_line.router)
-					buffer:send(self.getc[request_line.router](requ,resp):__raw())
-				end
-				-- return 404 or 303 here
-			end
-			buffer:close()
 		end
-		connection:close()
-	end
-} end
-
+	} 
+end
 return flask_lua

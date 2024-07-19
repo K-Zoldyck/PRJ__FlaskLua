@@ -1,0 +1,18 @@
+HTTP/1.1 200 ok
+Server: flask_lua/1.1
+Access-Control-Allow-Origin: *
+Content-Type: text/html
+Content-Length: 799
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro - flask_lua</title>
+    <style>body{margin: 0;padding: 0;display: flex;justify-content: center;align-items: center;height: 100vh;font-family: Arial, sans-serif;background: linear-gradient(135deg, #f06, #f79);color: #fff;}.container {text-align: center;padding: 20px;border-radius: 10px;background-color: rgba(0, 0, 0, 0.5);}h1 {margin-bottom: 10px;font-size: 2rem;}p {margin: 0;font-size: 1.2rem;}@media (max-width: 600px) {h1 {font-size: 1.5rem;}p {font-size: 1rem;}}</style>
+</head>
+<body>
+    <div class="container"><h1>Error - flask lua 1.1 </h1><p>The route does not exist or you do not have permission to access it.</p></div>
+</body>
+</html>
