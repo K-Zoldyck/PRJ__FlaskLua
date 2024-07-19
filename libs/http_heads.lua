@@ -2,7 +2,16 @@
 local http_heads = function()
     return
     {
-        req_schm = {}, -- request  scheme
-        res_schm = {}, -- response scheme 
+        -- request  scheme
+        req_schm = {
+            parameters = nil,
+            headers    = nil,
+            buffer     = nil,
+        }, 
+
+        -- response scheme
+        res_schm = {},  
     }
 end
+
+return http_heads
