@@ -1,37 +1,46 @@
 
-local http_heads = function()
-    return
-    {
-        -- request  scheme
-        req_schm = {
-            parameters = nil,
-            headers    = {},
-            buffer     = nil,
-        }, 
+local http_heads = {}
 
-        -- response scheme
-        res_schm = {
-            head = '',
-            code = '200 ok',
-            buff = '',
-            thed = '', -- temp usar head options
+local parameters_metatable = {
+    __index = function(table,key)
+        print("\t[\27[33m warning \27[0m] request.parameters[\27[34m" ..key.. "\27[0m] is undefined")
+        return 'undefined'
+    end
+}
+
+http_heads.req_schm = function()
+    local scheme = {
+        name = 'scheme request table',
+        parameters = {},
+        headers    = {},
+        buffer     = nil
+    }
+    setmetatable(scheme.parameters,parameters_metatable)
+    return scheme
+end
+
+http_heads.res_schm = function()
+    return {
+        name = 'scheme response table',
+        head = '',
+        code = '200 ok',
+        buff = '',
+        thed = '', -- temp usr head options
             
-            set_head = function(self,_key,_value)
-                self.thed = self.thed.._key..':'.._value..'\n'
-            end,
+        set_head = function(self,_key,_value)
+            self.thed = self.thed.._key..':'.._value..'\n'
+        end,
 
-            build = function(self)
-                self.head = self.head..'HTTP/1.1 '..self.code..'\n'
-                self.head = self.head..'Server:LunarFlask/1.1 (unix)\n'
-                self.head = self.head..'Access-Control-Allow-Origin:*\n'
-                self.head = self.head..'Content-Length:'..#self.buff..'\n'
-                self.head = self.head..self.thed
-
-                print(self.head..'\n'..self.buff)
-                return self.head..'\n'..self.buff 
-            end
-        },  
+        build = function(self)
+            self.head = self.head..'HTTP/1.1 '..self.code..'\n'
+            self.head = self.head..'Server:LunarFlask/1.1 (unix)\n'
+            self.head = self.head..'Access-Control-Allow-Origin:*\n'
+            self.head = self.head..'Content-Length:'..#self.buff..'\n'
+            self.head = self.head..self.thed    
+            return self.head..'\n'..self.buff 
+        end
     }
 end
+
 
 return http_heads
