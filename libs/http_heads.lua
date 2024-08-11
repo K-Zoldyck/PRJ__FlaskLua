@@ -10,7 +10,7 @@ local parameters_metatable = {
 
 http_heads.req_schm = function()
     local scheme = {
-        name = 'scheme request table',
+        name = 'REQ_TABLE',
         parameters = {},
         headers    = {},
         buffer     = nil
@@ -21,7 +21,7 @@ end
 
 http_heads.res_schm = function()
     return {
-        name = 'scheme response table',
+        name = 'RES_TABLE',
         head = '',
         code = '200 ok',
         buff = '',
